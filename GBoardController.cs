@@ -8,14 +8,21 @@ public class BoardController : MonoBehaviour
     public const int BOARD_HEIGHT = 14;
 
     int[,] _board = new int[BOARD_HEIGHT, BOARD_WIDTH];
+    GameObject[,] _Puyos = new GameObject[BOARD_HEIGHT, BOARD_WIDTH];
 
     private void ClearAll()
     {
-        for(int y = 0; y < BOARD_HEIGHT; y++)
+        for (int y = 0; y < BOARD_HEIGHT; y++)
         {
             for (int x = 0; x < BOARD_WIDTH; x++)
             {
                 _board[y, x] = 0;
+
+                if (_Puyos[y, x] != null)
+                {
+                    Destroy(_Puyos[y, x]);
+                }
+                _Puyos[y, x] = null;
             }
         }
     }
@@ -49,10 +56,5 @@ public class BoardController : MonoBehaviour
         _board[pos.y, pos.x] = val;
 
         return true;
-    }
-    // Update is called once per frame
-    void Update()
-    {
-        
     }
 }
