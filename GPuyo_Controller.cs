@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum PyoType
+public enum PuyoType
 {
     Blank = 0,
 
@@ -28,6 +28,28 @@ public class Puyo_Controller : MonoBehaviour
         Color.yellow,
         Color.blue,
 
+
         Color.gray,
     };
+
+    [SerializeField] Renderer my_renderer = default!;
+    PuyoType _type = PuyoType.Invalid;
+
+
+
+    public void SetPuyoType(PuyoType type)
+    {
+        _type = type;
+
+        my_renderer.material.color = color_table[(int)_type];
+    }
+    public PuyoType GetPuyoType()
+    {
+        return _type;
+    }
+
+    public void SetPos(Vector3 pos)
+    {
+        this.transform.localPosition = pos;
+    }
 }
