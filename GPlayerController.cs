@@ -83,6 +83,37 @@ public class PlayerController : MonoBehaviour
         //仮想的に移動できるか検証する(上下左右にずらした時も確認)
         Vector2Int pos = _position;
 
+        switch (rot)
+        {
+            case RotState.Down:
+                // 右(左)から下 : 自分の下か右(左)下にブロックがあれば引きあがる
+                if (!boardController.CanSettle(pos + Vector2Int.down) ||
+                   !boardController.CanSettle(pos + new Vector2Int(is_right ? 1 : -1, -1)))
+                {
+                    pos += Vector2Int.up;
+                }
+                break;
+            case RotState.Right:
+                // 右 : 右が埋まっていれば、左に移動
+                if (!boardController.CanSettle(pos + Vector2Int.right))
+                {
+                    pos += Vector2Int.left;
+                }
+                break;
+            case RotState.Left:
+                // 左 : 左が埋まっていれば、右に移動
+                if (!boardController.CanSettle(pos + Vector2Int.left))
+                {
+                    pos += Vector2Int.right;
+                }
+                break;
+            case RotState.Up:
+                break;
+            default:
+                Debug.Assert(false);
+                break;
+        }
+
         if (!CanMove(pos, rot))
         {
             return false;
@@ -90,6 +121,7 @@ public class PlayerController : MonoBehaviour
 
         //実際に移動
 
+        _position = pos;
         _rotate = rot;
 
         _puyoControllers[0].SetPos(new Vector3((float)_position.x, (float)_position.y, 0.0f));
