@@ -4,11 +4,21 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    enum RotState
+    {
+        Up = 0,
+        Right = 1,
+        Down = 2,
+        Left = 3,
+
+        Invalid = -1,
+    }
+
     [SerializeField] Puyo_Controller[] _puyoControllers = new Puyo_Controller[2] { default!, default! };
     [SerializeField] BoardController boardController = default!;
 
-
     Vector2Int _position;
+    RotState _rotate = RotState.Up;
 
     // Start is called before the first frame update
     void Start()
@@ -18,18 +28,29 @@ public class PlayerController : MonoBehaviour
         _puyoControllers[1].SetPuyoType(PuyoType.Red);
 
         _position = new Vector2Int(2, 12);
+        _rotate = RotState.Up;
 
         _puyoControllers[0].SetPos(new Vector3((float)_position.x, (float)_position.y, 0.0f));
-        _puyoControllers[1].SetPos(new Vector3((float)_position.x, (float)_position.y + 1.0f, 0.0f));
+        Vector2Int posChild = CalcChildPuyoPos(_position, _rotate);
+        _puyoControllers[1].SetPos(new Vector3((float)posChild.x, (float)posChild.y, 0.0f));
     }
 
-    private bool CanMove(Vector2Int pos)
+    static readonly Vector2Int[] rotate_tbl = new Vector2Int[]
+    {
+        Vector2Int.up, Vector2Int.right, Vector2Int.down, Vector2Int.left
+    };
+
+    private static Vector2Int CalcChildPuyoPos(Vector2Int pos, RotState rot)
+    {
+        return pos + rotate_tbl[(int)rot];
+    }
+    private bool CanMove(Vector2Int pos, RotState rot)
     {
         if (!boardController.CanSettle(pos))
         {
             return false;
         }
-        if (!boardController.CanSettle(pos + Vector2Int.up))
+        if (!boardController.CanSettle(CalcChildPuyoPos(pos, rot)))
         {
             return false;
         }
@@ -40,7 +61,7 @@ public class PlayerController : MonoBehaviour
     {
         //仮想的に移動できるか検証する
         Vector2Int pos = _position + (is_right ? Vector2Int.right : Vector2Int.left);
-        if (!CanMove(pos))
+        if (!CanMove(pos, _rotate))
         {
             return false;
         }
@@ -49,7 +70,31 @@ public class PlayerController : MonoBehaviour
         _position = pos;
 
         _puyoControllers[0].SetPos(new Vector3((float)_position.x, (float)_position.y, 0.0f));
-        _puyoControllers[1].SetPos(new Vector3((float)_position.x, (float)_position.y + 1.0f, 0.0f));
+        Vector2Int posChild = CalcChildPuyoPos(_position, _rotate);
+        _puyoControllers[1].SetPos(new Vector3((float)posChild.x, (float)posChild.y, 0.0f));
+
+        return true;
+    }
+
+    bool Rotate(bool is_right)
+    {
+        RotState rot = (RotState)(((int)_rotate + (is_right ? +1 : +3)) & 3);
+
+        //仮想的に移動できるか検証する(上下左右にずらした時も確認)
+        Vector2Int pos = _position;
+
+        if (!CanMove(pos, rot))
+        {
+            return false;
+        }
+
+        //実際に移動
+
+        _rotate = rot;
+
+        _puyoControllers[0].SetPos(new Vector3((float)_position.x, (float)_position.y, 0.0f));
+        Vector2Int posChild = CalcChildPuyoPos(_position, _rotate);
+        _puyoControllers[1].SetPos(new Vector3((float)posChild.x, (float)posChild.y, 0.0f));
 
         return true;
     }
@@ -64,6 +109,16 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
             Translate(false);
+        }
+
+        //回転移動のキー入力取得
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            Rotate(true);
+        }
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            Rotate(false);
         }
     }
 }
