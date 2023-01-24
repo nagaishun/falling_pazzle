@@ -130,6 +130,28 @@ public class PlayerController : MonoBehaviour
 
         return true;
     }
+
+    void QuickDrop()
+    {
+        Vector2Int pos = _position;
+        do
+        {
+            pos += Vector2Int.down;
+        } while (CanMove(pos, _rotate));
+        pos -= Vector2Int.down;
+
+        _position = pos;
+
+        // 直接接地
+        bool is_set0 = boardController.Settle(_position, (int)_puyoControllers[0].GetPuyoType());
+        Debug.Assert(is_set0);
+
+        bool is_set1 = boardController.Settle(CalcChildPuyoPos(_position, _rotate), (int)_puyoControllers[1].GetPuyoType());
+        Debug.Assert(is_set1);
+
+        gameObject.SetActive(false);
+    }
+
     // Update is called once per frame
     void Update()
     {
@@ -151,6 +173,12 @@ public class PlayerController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Z))
         {
             Rotate(false);
+        }
+
+        //クイックドロップのキー入力取得
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            QuickDrop();
         }
     }
 }
