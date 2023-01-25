@@ -6,7 +6,7 @@ public class AnimationController
 {
     const float DELTA_TIME_MAX = 1.0f;
     float _time = 0.0f;
-    float _inv_time_max;
+    float _inv_time_max = 1.0f;
 
     public void Set(float max_time)
     {
