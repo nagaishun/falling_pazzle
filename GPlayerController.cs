@@ -4,6 +4,10 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    // 移動速度遷移時間
+    const float TRANS_TIME = 0.05f;
+    // 回転遷移時間
+    const float ROT_TIME = 0.05f;
     enum RotState
     {
         Up = 0,
@@ -19,6 +23,10 @@ public class PlayerController : MonoBehaviour
 
     Vector2Int _position;
     RotState _rotate = RotState.Up;
+
+    AnimationController _animationController = new AnimationController();
+    Vector2Int _last_position;
+    RotState _last_rotate = RotState.Up;
 
     // Start is called before the first frame update
     void Start()
@@ -57,6 +65,19 @@ public class PlayerController : MonoBehaviour
         return true;
     }
 
+    void SetTransition(Vector2Int pos, RotState rot, float time)
+    {
+        // 補間のために保存しておく
+        _last_position = _position;
+        _last_rotate = _rotate;
+
+        // 値の更新
+        _position = pos;
+        _rotate = rot;
+
+        _animationController.Set(time);
+    }
+
     private bool Translate(bool is_right)
     {
         //仮想的に移動できるか検証する
@@ -67,11 +88,12 @@ public class PlayerController : MonoBehaviour
         }
 
         //実際に移動
-        _position = pos;
+        SetTransition(pos, _rotate, TRANS_TIME);
+        //_position = pos;
 
-        _puyoControllers[0].SetPos(new Vector3((float)_position.x, (float)_position.y, 0.0f));
-        Vector2Int posChild = CalcChildPuyoPos(_position, _rotate);
-        _puyoControllers[1].SetPos(new Vector3((float)posChild.x, (float)posChild.y, 0.0f));
+        //_puyoControllers[0].SetPos(new Vector3((float)_position.x, (float)_position.y, 0.0f));
+        //Vector2Int posChild = CalcChildPuyoPos(_position, _rotate);
+        //_puyoControllers[1].SetPos(new Vector3((float)posChild.x, (float)posChild.y, 0.0f));
 
         return true;
     }
@@ -120,13 +142,13 @@ public class PlayerController : MonoBehaviour
         }
 
         //実際に移動
+        SetTransition(pos, rot, ROT_TIME);
+        //_position = pos;
+        //_rotate = rot;
 
-        _position = pos;
-        _rotate = rot;
-
-        _puyoControllers[0].SetPos(new Vector3((float)_position.x, (float)_position.y, 0.0f));
-        Vector2Int posChild = CalcChildPuyoPos(_position, _rotate);
-        _puyoControllers[1].SetPos(new Vector3((float)posChild.x, (float)posChild.y, 0.0f));
+        //_puyoControllers[0].SetPos(new Vector3((float)_position.x, (float)_position.y, 0.0f));
+        //Vector2Int posChild = CalcChildPuyoPos(_position, _rotate);
+        //_puyoControllers[1].SetPos(new Vector3((float)posChild.x, (float)posChild.y, 0.0f));
 
         return true;
     }
@@ -152,8 +174,7 @@ public class PlayerController : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    // Update is called once per frame
-    void Update()
+    void Control()
     {
         //平行移動のキー入力取得
         if (Input.GetKeyDown(KeyCode.RightArrow))
@@ -180,5 +201,51 @@ public class PlayerController : MonoBehaviour
         {
             QuickDrop();
         }
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        // アニメーション中はキー入力を受け付けない
+        if (!_animationController.Update(Time.deltaTime))
+        {
+            Control();
+        }
+        float anim_rate = _animationController.GetNormalized();
+        _puyoControllers[0].SetPos(Interpolate(_position, RotState.Invalid, _last_position, RotState.Invalid, anim_rate));
+        _puyoControllers[1].SetPos(Interpolate(_position, _rotate, _last_position, _last_rotate, anim_rate));
+    }
+
+    // rateが 1 -> 0 で、pos_last -> pos, rot_last -> rot に遷移。rot が Rotstate.Invalid なら回転を考慮しない
+    static Vector3 Interpolate(Vector2Int pos, RotState rot, Vector2Int pos_last, RotState rot_last, float rate)
+    {
+        // 平行移動
+        Vector3 p = Vector3.Lerp(
+            new Vector3((float)pos.x, (float)pos.y, 0.0f),
+            new Vector3((float)pos_last.x, (float)pos_last.y, 0.0f), rate);
+
+        if (rot == RotState.Invalid)
+        {
+            return p;
+        }
+
+        // 回転
+        float theta0 = 0.5f * Mathf.PI * (float)(int)rot;
+        float theta1 = 0.5f * Mathf.PI * (float)(int)rot_last;
+        float theta = theta1 - theta0;
+
+        // 近い方向に回る
+        if (+Mathf.PI < theta)
+        {
+            theta = theta - 2.0f * Mathf.PI;
+        }
+        if (theta < -Mathf.PI)
+        {
+            theta = theta + 2.0f * Mathf.PI;
+        }
+
+        theta = theta0 + rate * theta;
+
+        return p + new Vector3(Mathf.Sin(theta), Mathf.Cos(theta), 0.0f);
     }
 }
