@@ -49,7 +49,7 @@ public class LogicalInput
     }
     public bool IsRepeat(Key k)
     {
-        return inputRel.HasFlag(k);
+        return inputRep.HasFlag(k);
     }
 
     public void Clear()
@@ -66,7 +66,7 @@ public class LogicalInput
     }
 
     // Update is called once per frame
-    void Update(Key inputDev)
+    public void Update(Key inputDev)
     {
         // “ü—Í‚ª“ü‚Á‚½/”²‚¯‚½
         inputTrg = (inputDev ^ inputRaw) & inputDev;
