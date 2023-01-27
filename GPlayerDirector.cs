@@ -8,6 +8,9 @@ public class PlayDirector : MonoBehaviour
     PlayerController _playerController = null;
     LogicalInput _logicalInput = new LogicalInput();
 
+    // 次nextのゲームオブジェクトを制御
+    [SerializeField] PuyoPair[] nextPuyoPairs = { default!, default! };
+
     NextQueue _nextQueue = new NextQueue();
     // Start is called before the first frame update
     void Start()
@@ -18,6 +21,15 @@ public class PlayDirector : MonoBehaviour
 
         _nextQueue.Initialize();
         Spawn(_nextQueue.Update());
+        UpdateNextsView();
+    }
+
+    void UpdateNextsView()
+    {
+        _nextQueue.Each((int idx, Vector2Int n) =>
+        {
+            nextPuyoPairs[idx++].SetPuyoType((PuyoType)n.x, (PuyoType)n.y);
+        });
     }
 
     static readonly KeyCode[] key_code_tbl = new KeyCode[(int)LogicalInput.Key.MAX]
@@ -56,6 +68,7 @@ public class PlayDirector : MonoBehaviour
         if (!player.activeSelf)
         {
             Spawn(_nextQueue.Update());
+            UpdateNextsView();
         }
     }
 
