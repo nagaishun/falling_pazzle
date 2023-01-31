@@ -97,11 +97,78 @@ public class BoardController : MonoBehaviour
 
     public bool CheckFall()
     {
-        return true;
+        _falls.Clear();
+        _fallFrames = 0;
+
+        // 落ちる際の高さ記録用
+        int[] dsts = new int[BOARD_WIDTH];
+        for (int x = 0; x < BOARD_WIDTH; x++)
+        {
+            dsts[x] = 0;
+        }
+
+        int max_check_line = BOARD_HEIGHT - 1;
+        for (int y = 0; y < max_check_line; y++)
+        {
+            for (int x = 0; x < BOARD_WIDTH; x++)
+            {
+                if (_board[y, x] == 0)
+                {
+                    continue;
+                }
+
+                int dst = dsts[x];
+                dsts[x] = y + 1;
+
+                if (y == 0)
+                {
+                    continue;
+                }
+
+                if (_board[y - 1, x] != 0)
+                {
+                    continue;
+                }
+
+                _falls.Add(new FallData(x, y, dst));
+
+                // データを変更しておく
+                _board[dst, x] = _board[y, x];
+                _board[y, x] = 0;
+                _Puyos[dst, x] = _Puyos[y, x];
+                _Puyos[y, x] = null;
+
+                // 次の物は落ちたさらに上に乗る
+                dsts[x] = dst + 1;
+            }
+        }
+
+        return _falls.Count != 0;
     }
 
     public bool Fall()
     {
-        return true;
+        _fallFrames++;
+
+        float dy = _fallFrames / (float)FALL_FRAME_PER_CELL;
+        int di = (int)dy;
+
+        for (int i = _falls.Count - 1; 0 <= i; i--)
+        {
+            FallData f = _falls[i];
+
+            Vector3 pos = _Puyos[f.Dest, f.X].transform.localPosition;
+            pos.y = f.Y - dy;
+
+            if (f.Y <= f.Dest + di)
+            {
+                pos.y = f.Dest;
+                _falls.RemoveAt(i);
+            }
+            // 表示位置の更新
+            _Puyos[f.Dest, f.X].transform.localPosition = pos;
+        }
+
+        return _falls.Count != 0;
     }
 }
